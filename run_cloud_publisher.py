@@ -64,7 +64,7 @@ def run_automated_pipeline():
 
     # 5. 티스토리 자동 발행 시도
     t_token = os.getenv("TISTORY_ACCESS_TOKEN", Config.TISTORY_ACCESS_TOKEN)
-    t_name = os.getenv("TISTORY_BLOG_NAME", Config.TISTORY_BLOG_NAME)
+    t_name = os.getenv("TISTORY_BLOG_NAME", Config.TISTORY_BLOG_NAME) or "essay0606"
 
     if t_token and t_name:
         logger.info(f"티스토리 자동 발행 시작 ({t_name})")

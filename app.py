@@ -215,36 +215,36 @@ if st.session_state.blog_data is not None:
         # 🟠 티스토리 발행 카드
         # -----------------------------
         st.markdown('<div class="tistory-card">', unsafe_allow_html=True)
-        st.markdown("#### 🟠 티스토리 즉시 자동 발행")
-        
-        with st.expander("🔑 티스토리 Open API 설정 (필수)", expanded=True):
-            t_token = st.text_input("티스토리 Access Token", value=Config.TISTORY_ACCESS_TOKEN, type="password", key="t_tok")
-            t_name = st.text_input("블로그 서브도메인 이름", value=Config.TISTORY_BLOG_NAME, placeholder="예: myblog", key="t_name")
-            t_vis = st.selectbox(
-                "발행 상태",
-                options=[3, 0],
-                format_func=lambda x: "🌐 즉시 공개 발행" if x == 3 else "🔒 비공개 발행 (테스트)",
-                key="t_vis"
-            )
+        st.markdown("#### 🟠 티스토리 포스팅 도구")
+        st.info("💡 **안내:** 카카오 정책 변경으로 티스토리의 과거 공식 Open API가 전면 종료되었습니다. 현재는 **'원클릭 서식 복사'** 방식으로 3초 만에 가장 깔끔하게 글을 등록하실 수 있습니다!")
 
-        if st.button("🚀 티스토리에 즉시 자동 발행하기", key="btn_tistory"):
-            if not t_token or not t_name:
-                st.error("⚠️ 티스토리 Access Token과 블로그 이름을 입력해주세요.")
-            else:
-                with st.spinner("티스토리 Open API를 통해 글을 발행하고 있습니다..."):
-                    t_res = publish_to_tistory(
-                        access_token=t_token,
-                        blog_name=t_name,
-                        title=blog_data["title"],
-                        content=blog_data["content"],
-                        visibility=t_vis,
-                        tags=blog_data.get("tags")
-                    )
-                    if t_res.get("success"):
-                        st.success("🎉 **[티스토리] 포스팅이 성공적으로 발행되었습니다!**")
-                        st.markdown(f"👉 [**발행된 티스토리 글 바로 보러가기**]({t_res.get('post_url')})")
-                    else:
-                        st.error(f"❌ 티스토리 발행 실패: {t_res.get('message')}")
+        # 티스토리 원클릭 복사 도구
+        tistory_copy_html = f"""
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <button onclick="navigator.clipboard.writeText(`{blog_data['title']}`); alert('티스토리용 제목이 복사되었습니다!');" 
+                    style="background:#f97316; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">
+                📋 1. 티스토리 제목 복사하기
+            </button>
+            <button id="tistory-copy-body-btn" 
+                    style="background:#ea580c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">
+                📋 2. 본문 서식 복사하기 (HTML/스타일 완벽 유지)
+            </button>
+        </div>
+        <div id="hidden-tistory-content" style="display:none;">{blog_data['content']}</div>
+        <script>
+            document.getElementById('tistory-copy-body-btn').onclick = function() {{
+                const content = document.getElementById('hidden-tistory-content').innerHTML;
+                const blob = new Blob([content], {{ type: 'text/html' }});
+                const plainBlob = new Blob([document.getElementById('hidden-tistory-content').innerText], {{ type: 'text/plain' }});
+                const item = new ClipboardItem({{ 'text/html': blob, 'text/plain': plainBlob }});
+                navigator.clipboard.write([item]).then(() => {{
+                    alert('본문 서식(스타일, 박스, 볼드)이 복사되었습니다! 티스토리 에디터에서 Ctrl+V 하세요.');
+                }});
+            }};
+        </script>
+        """
+        components.html(tistory_copy_html, height=85)
+        st.link_button("✍️ 3. essay0606 티스토리 글쓰기 새 창 열기", "https://essay0606.tistory.com/manage/newpost/")
         st.markdown('</div>', unsafe_allow_html=True)
 
 else:
