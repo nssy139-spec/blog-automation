@@ -1,0 +1,16 @@
+# 가상환경 및 로컬 캐시
+.venv/
+__pycache__/
+*.pyc
+
+# 보안 및 환경설정 파일 (비밀번호 노출 절대 방지)
+.env
+
+# 로그 및 임시 파일
+logs/
+*.log
+
+# OS 및 에디터 설정
+.vscode/
+.idea/
+Thumbs.db
