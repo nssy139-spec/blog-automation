@@ -34,3 +34,4 @@ jobs:
           TISTORY_BLOG_NAME: ${{ secrets.TISTORY_BLOG_NAME }}
         run: |
           python run_cloud_publisher.py
+
