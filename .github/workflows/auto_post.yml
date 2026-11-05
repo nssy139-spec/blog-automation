@@ -1,10 +1,12 @@
-name: 🤖 RichYuni Cloud Blog Auto Publisher
+name: 🤖 RichYuni Cloud Multi-Blog Auto Publisher
 
 on:
   schedule:
-    # 매일 한국 시간(KST) 오전 09:00 자동 실행 (UTC 00:00)
-    - cron: '0 0 * * *'
-  # 깃허브 웹 화면에서 [Run workflow] 버튼을 눌러 언제든 즉시 수동 실행도 가능
+    # 1회차: 매일 한국 시간(KST) 오전 08:30 (UTC 23:30)
+    - cron: '30 23 * * *'
+    # 2회차: 매일 한국 시간(KST) 오후 18:30 (UTC 09:30)
+    - cron: '30 9 * * *'
+  # 깃허브 웹 화면에서 [Run workflow] 버튼으로 언제든 즉시 수동 실행 가능
   workflow_dispatch:
 
 jobs:
@@ -25,13 +27,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 4. 무인 블로그 자동 생성 및 포스팅 실행
+      - name: 4. 재테크/경제 + 생활/문화 멀티 포스팅 자동 실행
         env:
           NAVER_ID: ${{ secrets.NAVER_ID }}
           NAVER_PW: ${{ secrets.NAVER_PW }}
           NAVER_BLOG_ID: ${{ secrets.NAVER_BLOG_ID }}
           TISTORY_ACCESS_TOKEN: ${{ secrets.TISTORY_ACCESS_TOKEN }}
-          TISTORY_BLOG_NAME: ${{ secrets.TISTORY_BLOG_NAME }}
+          TISTORY_BLOG_NAME: essay0606
         run: |
           python run_cloud_publisher.py
-

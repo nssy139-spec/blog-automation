@@ -91,33 +91,43 @@ st.markdown('<div class="main-title">🤖 리치유니의 무인 블로그 자�
 st.markdown('<div class="sub-title">글 자동 생성부터 네이버·티스토리 실제 원클릭 자동 발행까지 한 곳에서 제어합니다. 💕</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# STEP 1: 콘텐츠 기획 및 생성 패널
+# STEP 1: 콘텐츠 기획 및 생성 패널 (재테크·경제 / 생활·문화 멀티 카테고리)
 # -------------------------------------------------------------
 st.markdown("### 📌 1단계: 콘텐츠 기획 & AI 글 생성")
 
-col_input1, col_input2 = st.columns([3, 2])
+col_cat, col_input1, col_input2 = st.columns([2, 3, 2])
+with col_cat:
+    category_choice = st.selectbox(
+        "📂 발행 분야",
+        ["재테크·경제", "생활·문화·리뷰"],
+        index=0
+    )
 with col_input1:
+    default_kw = "2026년 하반기 정부지원금 혜택" if category_choice == "재테크·경제" else "AI 생산성 툴 추천 및 활용 꿀팁"
     keyword = st.text_input(
         "발행할 블로그 주제(키워드)",
-        value="2026년 하반기 정부지원금",
+        value=default_kw,
         placeholder="예: 2026년 청년 도약 계좌, 재테크 꿀팁 등"
     )
 with col_input2:
     style_options = list(STYLE_PRESETS.keys())
     image_style = st.selectbox(
-        "🎨 썸네일/본문 이미지 감성 스타일",
+        "🎨 감성 비주얼 스타일",
         style_options,
         index=0
     )
 
 st.markdown('<div class="generate-btn">', unsafe_allow_html=True)
-if st.button("✨ 1. 고품질 블로그 글 & 썸네일 프롬프트 즉시 생성"):
+if st.button("✨ 1. 고품질 블로그 글 & 고화질 이미지 즉시 생성"):
     if not keyword.strip():
         st.error("⚠️ 키워드를 입력해 주세요.")
     else:
-        with st.spinner("리치유니 맞춤형 템플릿으로 고품질 글감을 생성하고 있습니다..."):
-            st.session_state.blog_data = generate_blog_content(keyword=keyword, image_style=image_style)
+        with st.spinner("리치유니 맞춤형 템플릿과 고화질 이미지 2장을 결합하여 글을 생성하고 있습니다..."):
+            cat_param = "finance" if category_choice == "재테크·경제" else "lifestyle"
+            st.session_state.blog_data = generate_blog_content(keyword=keyword, image_style=image_style, category=cat_param)
             st.session_state.img_meta = create_image_metadata(keyword=keyword, style_name=image_style)
+            st.success(f"🎉 [{category_choice}] '{keyword}' 글이 고화질 사진 2장과 함께 완벽하게 생성되었습니다!")
+st.markdown('</div>', unsafe_allow_html=True)
             st.success(f"🎉 '{keyword}' 주제로 글이 완벽하게 생성되었습니다! 아래에서 내용을 확인하고 바로 발행하세요.")
 st.markdown('</div>', unsafe_allow_html=True)
 

@@ -1,6 +1,8 @@
 """
-클라우드 완전 무인 자동 포스팅 러너 (GitHub Actions 크론용)
-- 컴퓨터가 꺼져 있어도 클라우드 서버가 매일 정해진 시간에 이 스크립트를 실행합니다.
+클라우드 완전 무인 멀티 포스팅 러너 (GitHub Actions 크론용)
+- 네이버 블로그: 재테크/경제 1개 + 생활/문화 1개 (하루 2~4편)
+- 티스토리: 재테크/경제 1개 + 생활/리뷰 1개 (하루 2편)
+- 고화질 대표 썸네일 및 본문 이미지 자동 삽입 지원
 """
 import os
 import random
@@ -8,83 +10,114 @@ from datetime import datetime
 from config import Config
 from modules.logger import setup_logger
 from modules.generator import generate_blog_content
-from modules.image_service import create_image_metadata, STYLE_PRESETS
 from modules.publisher import publish_to_naver_email, publish_to_tistory
 
 logger = setup_logger("cloud_runner")
 
-# 자동 발행용 추천 키워드 풀 (매일 자동으로 최신 글감 순환)
-AUTO_KEYWORD_POOL = [
-    "2026년 하반기 정부지원금 혜택 총정리",
-    "2026년 청년 도약 계좌 신청 조건 및 우대금리",
-    "직장인을 위한 연말정산 절세 꿀팁 가이드",
+# 카테고리별 풍부한 글감 키워드 풀
+FINANCE_KEYWORD_POOL = [
+    "2026년 하반기 정부지원금 혜택 및 신청 자격",
+    "2026년 청년 도약 계좌 조건 및 우대금리 비교",
+    "직장인을 위한 연말정산 절세 전략 핵심 꿀팁",
     "2026년 소상공인 정책자금 신청 절차 및 필수 서류",
-    "AI 기반 업무 생산성 극대화 추천 도구 BEST 5",
-    "스마트한 재테크 초보자를 위한 월급 관리 루틴"
+    "사회초년생을 위한 목돈 만들기 통장 쪼개기 루틴",
+    "금리 인하기 똑똑한 예적금 갈아타기 전략"
+]
+
+LIFESTYLE_KEYWORD_POOL = [
+    "AI 기반 일상 업무 생산성 극대화 추천 도구 BEST 5",
+    "바쁜 현대인을 위한 시간 관리 노션(Notion) 템플릿 활용법",
+    "직장인 스트레스 완화와 건강한 수면 루틴 만들기",
+    "주말에 즐기기 좋은 힐링 문화 전시 및 공간 추천",
+    "스마트한 홈오피스 데스크 셋업 필수 아이템 솔직 리뷰",
+    "간편하고 건강한 1인 가구 밀프렙 식단 관리 꿀팁"
 ]
 
 def run_automated_pipeline():
-    logger.info("=== [클라우드 무인 자동 발행 파이프라인 가동] ===")
-    
-    # 1. 오늘의 키워드 선정 (환경변수로 지정되거나 키워드 풀에서 자동 선택)
-    target_keyword = os.getenv("CUSTOM_KEYWORD", "").strip()
-    if not target_keyword:
-        target_keyword = random.choice(AUTO_KEYWORD_POOL)
-    
-    # 2. 이미지 스타일 선정
-    style_names = list(STYLE_PRESETS.keys())
-    selected_style = random.choice(style_names)
-    
-    logger.info(f"오늘의 주제: [{target_keyword}] | 스타일: [{selected_style}]")
+    logger.info("==================================================")
+    logger.info("=== [클라우드 무인 멀티 블로그 자동 발행 파이프라인 가동] ===")
+    logger.info("==================================================")
 
-    # 3. 리치유니 맞춤형 콘텐츠 생성
-    blog_data = generate_blog_content(keyword=target_keyword, image_style=selected_style)
-    logger.info(f"콘텐츠 생성 완료 - 제목: {blog_data['title']}")
+    current_hour = datetime.utcnow().hour # UTC 기준 시간
+    logger.info(f"현재 UTC 시간: {current_hour}시")
 
-    # 4. 네이버 블로그 자동 발행 시도
+    # 네이버 및 티스토리 인증키 확인
     naver_id = os.getenv("NAVER_ID", Config.NAVER_ID)
     naver_pw = os.getenv("NAVER_PW", Config.NAVER_PW)
     naver_blog_id = os.getenv("NAVER_BLOG_ID", Config.NAVER_BLOG_ID) or naver_id
 
+    t_name = os.getenv("TISTORY_BLOG_NAME", Config.TISTORY_BLOG_NAME) or "essay0606"
+    t_token = os.getenv("TISTORY_ACCESS_TOKEN", Config.TISTORY_ACCESS_TOKEN)
+
+    # ----------------------------------------------------
+    # 1. [재테크·경제] 콘텐츠 생성 및 네이버/티스토리 포스팅
+    # ----------------------------------------------------
+    kw_finance = random.choice(FINANCE_KEYWORD_POOL)
+    logger.info(f"[1] 재테크·경제 포스팅 준비: '{kw_finance}'")
+    blog_finance = generate_blog_content(keyword=kw_finance, category="finance")
+
     if naver_id and naver_pw:
-        logger.info(f"네이버 블로그 발행 시작 ({naver_id})")
-        res_naver = publish_to_naver_email(
+        res_n1 = publish_to_naver_email(
             naver_id=naver_id,
             naver_password=naver_pw,
-            title=blog_data["title"],
-            content_html=blog_data["content"],
+            title=blog_finance["title"],
+            content_html=blog_finance["content"],
             blog_id=naver_blog_id
         )
-        if res_naver.get("success"):
-            logger.info(f"🎉 네이버 블로그 자동 발행 성공! URL: {res_naver.get('post_url')}")
+        if res_n1.get("success"):
+            logger.info(f"🎉 [네이버] 재테크 글 발행 성공! -> {blog_finance['title']}")
         else:
-            logger.warning(f"⚠️ 네이버 발행 실패: {res_naver.get('message')}")
-    else:
-        logger.info("네이버 인증 정보가 설정되지 않아 발행을 건너뜁니다.")
-
-    # 5. 티스토리 자동 발행 시도
-    t_token = os.getenv("TISTORY_ACCESS_TOKEN", Config.TISTORY_ACCESS_TOKEN)
-    t_name = os.getenv("TISTORY_BLOG_NAME", Config.TISTORY_BLOG_NAME) or "essay0606"
+            logger.warning(f"⚠️ [네이버] 재테크 글 실패: {res_n1.get('message')}")
 
     if t_token and t_name:
-        logger.info(f"티스토리 자동 발행 시작 ({t_name})")
-        res_tistory = publish_to_tistory(
+        res_t1 = publish_to_tistory(
             access_token=t_token,
             blog_name=t_name,
-            title=blog_data["title"],
-            content=blog_data["content"],
-            visibility=3, # 즉시 공개
-            tags=blog_data.get("tags")
+            title=blog_finance["title"],
+            content=blog_finance["content"],
+            visibility=3,
+            tags=blog_finance.get("tags")
         )
-        if res_tistory.get("success"):
-            logger.info(f"🎉 티스토리 자동 발행 성공! URL: {res_tistory.get('post_url')}")
+        if res_t1.get("success"):
+            logger.info(f"🎉 [티스토리] 재테크 글 발행 성공! -> {res_t1.get('post_url')}")
         else:
-            logger.warning(f"⚠️ 티스토리 발행 실패: {res_tistory.get('message')}")
-    else:
-        logger.info("티스토리 인증 정보가 설정되지 않아 발행을 건너뜁니다.")
+            logger.warning(f"⚠️ [티스토리] 재테크 글 실패: {res_t1.get('message')}")
 
-    logger.info("=== [클라우드 무인 자동 발행 완료] ===")
+    # ----------------------------------------------------
+    # 2. [생활·문화·리뷰] 콘텐츠 생성 및 네이버/티스토리 포스팅
+    # ----------------------------------------------------
+    kw_lifestyle = random.choice(LIFESTYLE_KEYWORD_POOL)
+    logger.info(f"[2] 생활·문화·리뷰 포스팅 준비: '{kw_lifestyle}'")
+    blog_lifestyle = generate_blog_content(keyword=kw_lifestyle, category="lifestyle")
+
+    if naver_id and naver_pw:
+        res_n2 = publish_to_naver_email(
+            naver_id=naver_id,
+            naver_password=naver_pw,
+            title=blog_lifestyle["title"],
+            content_html=blog_lifestyle["content"],
+            blog_id=naver_blog_id
+        )
+        if res_n2.get("success"):
+            logger.info(f"🎉 [네이버] 생활·문화 글 발행 성공! -> {blog_lifestyle['title']}")
+        else:
+            logger.warning(f"⚠️ [네이버] 생활·문화 글 실패: {res_n2.get('message')}")
+
+    if t_token and t_name:
+        res_t2 = publish_to_tistory(
+            access_token=t_token,
+            blog_name=t_name,
+            title=blog_lifestyle["title"],
+            content=blog_lifestyle["content"],
+            visibility=3,
+            tags=blog_lifestyle.get("tags")
+        )
+        if res_t2.get("success"):
+            logger.info(f"🎉 [티스토리] 생활·문화 글 발행 성공! -> {res_t2.get('post_url')}")
+        else:
+            logger.warning(f"⚠️ [티스토리] 생활·문화 글 실패: {res_t2.get('message')}")
+
+    logger.info("=== [클라우드 무인 멀티 포스팅 완료] ===")
 
 if __name__ == "__main__":
     run_automated_pipeline()
-
