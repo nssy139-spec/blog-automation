@@ -17,3 +17,4 @@ print(f"Generated Title: {blog_data['title']}")
 print(f"Generated Content Length: {len(blog_data['content'])} chars")
 print(f"Naver ID: {Config.NAVER_ID}, Naver PW Exists: {bool(Config.NAVER_PW)}")
 print(f"Kakao ID: {Config.KAKAO_ID}, Kakao PW Exists: {bool(Config.KAKAO_PW)}")
+

@@ -1,14 +1,18 @@
 {
-  "sequence_index": 0,
+  "sequence_index": 2,
   "keyword_indices": {
-    "재테크": 0,
-    "생활문화": 0,
+    "재테크": 1,
+    "생활문화": 1,
     "정부지원금": 0,
     "생활용품": 0,
     "부동산": 0,
     "건강": 0,
     "인테리어": 0
   },
-  "last_generated_topic": null,
+  "last_generated_topic": {
+    "type": "생활문화",
+    "keyword": "주말에 가볼 만한 서울 근교 힐링 전시 및 문화 공간",
+    "category": "lifestyle"
+  },
   "history": []
 }

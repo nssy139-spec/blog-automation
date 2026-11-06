@@ -46,9 +46,9 @@ def run_automated_pipeline():
     naver_id = os.getenv("NAVER_ID", Config.NAVER_ID)
     naver_pw = os.getenv("NAVER_PW", Config.NAVER_PW)
 
-    kakao_id = os.getenv("KAKAO_ID", "")
-    kakao_pw = os.getenv("KAKAO_PW", "")
-    t_name = os.getenv("TISTORY_BLOG_NAME", "essay0606")
+    kakao_id = os.getenv("KAKAO_ID", Config.KAKAO_ID)
+    kakao_pw = os.getenv("KAKAO_PW", Config.KAKAO_PW)
+    t_name = os.getenv("TISTORY_BLOG_NAME", Config.TISTORY_BLOG_NAME)
 
     # 4. [네이버 블로그] 자동 발행 실행
     if naver_id and naver_pw:
