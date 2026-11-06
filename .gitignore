@@ -9,9 +9,14 @@ __pycache__/
 # 로그 및 임시 파일
 logs/
 *.log
+*.png
+browser_profile/
+check_kakao.py
+copy_from_profile24.py
+sync_cookies.py
+watch_and_copy*.py
 
 # OS 및 에디터 설정
 .vscode/
 .idea/
 Thumbs.db
-

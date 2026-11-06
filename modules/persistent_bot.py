@@ -181,14 +181,14 @@ def publish_tistory_direct(
 
                 if kakao_id and kakao_pw:
                     try:
-                        page.evaluate(f"""(id, pw) => {{
-                            const idInput = document.querySelector('input[name="loginId"]') || document.querySelector('#loginId--1');
-                            const pwInput = document.querySelector('input[name="password"]') || document.querySelector('#password--2');
-                            if (idInput) idInput.value = id;
-                            if (pwInput) pwInput.value = pw;
-                        }}""", kakao_id, kakao_pw)
+                        id_el = page.locator("input#loginId--1, input[name='loginId'], input#id_email_2")
+                        if id_el.count() > 0:
+                            id_el.first.fill(kakao_id.strip())
+                        pw_el = page.locator("input#password--2, input[name='password'], input#id_password_3")
+                        if pw_el.count() > 0:
+                            pw_el.first.fill(kakao_pw.strip())
                         page.wait_for_timeout(500)
-                        submit_btn = page.locator("button[type='submit'], .btn_g.highlight.submit")
+                        submit_btn = page.locator("button[type='submit'], .btn_g.highlight.submit, button:has-text('로그인')")
                         if submit_btn.count() > 0:
                             submit_btn.first.click()
                     except Exception as e:

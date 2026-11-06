@@ -111,8 +111,8 @@ with st.expander("⚙️ 블로그 로그인 계정 설정 (미입력 시 config
         n_pw = st.text_input("네이버 비밀번호 (또는 앱비밀번호)", value=Config.NAVER_PW, type="password", key="cfg_npw")
     with col_acc2:
         st.markdown("##### 🟠 카카오/티스토리 로그인 정보")
-        k_id = st.text_input("카카오 로그인 아이디(이메일)", value=Config.NAVER_ID, key="cfg_kid")
-        k_pw = st.text_input("카카오 비밀번호", value="", type="password", key="cfg_kpw")
+        k_id = st.text_input("카카오 로그인 아이디(이메일)", value=Config.KAKAO_ID, key="cfg_kid")
+        k_pw = st.text_input("카카오 비밀번호", value=Config.KAKAO_PW, type="password", key="cfg_kpw")
         t_bname = st.text_input("티스토리 블로그 서브도메인", value=Config.TISTORY_BLOG_NAME or "essay0606", key="cfg_tbname")
 
 st.write("")
@@ -166,8 +166,8 @@ with mode_tab1:
 
             # 3단계: 티스토리 블로그 무인 자동 발행
             status_box.write("🟠 3단계: 티스토리 블로그 에디터로 직격 접속하여 무인 자동 발행 중...")
-            kakao_user_id = k_id.strip() if k_id else Config.NAVER_ID
-            kakao_user_pw = k_pw.strip()
+            kakao_user_id = k_id.strip() if k_id else Config.KAKAO_ID
+            kakao_user_pw = k_pw.strip() if k_pw else Config.KAKAO_PW
             target_tistory = t_bname.strip() if t_bname else "essay0606"
 
             res_t = publish_tistory_direct(
@@ -215,8 +215,8 @@ with mode_tab2:
                 if res_n.get("success"):
                     status_box.write(f"🎉 **[네이버 블로그 발행 성공!]** 👉 [확인]({res_n.get('post_url')})")
 
-                kakao_user_id = k_id.strip() if k_id else Config.NAVER_ID
-                kakao_user_pw = k_pw.strip()
+                kakao_user_id = k_id.strip() if k_id else Config.KAKAO_ID
+                kakao_user_pw = k_pw.strip() if k_pw else Config.KAKAO_PW
                 target_tistory = t_bname.strip() if t_bname else "essay0606"
                 res_t = publish_tistory_direct(title=blog_data["title"], content_html=blog_data["content"], blog_name=target_tistory, kakao_id=kakao_user_id, kakao_pw=kakao_user_pw)
                 if res_t.get("success"):
