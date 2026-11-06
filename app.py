@@ -81,6 +81,27 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# 티스토리 단독 1회 로그인 연결 배너
+st.markdown("""
+<div style="background-color: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;">
+    <div style="font-weight: bold; color: #c2410c; font-size: 1rem;">
+        🟠 [1단계 집중] 티스토리 단독 영구 로그인 세션 연결
+    </div>
+    <div style="color: #7c2d12; font-size: 0.9rem; margin-top: 4px;">
+        네이버는 잠시 접어두고, <b>티스토리 브라우저 창을 먼저 열어 딱 1회만 로그인</b>해 두면 세션이 영구 저장되어 앞으로 100% 무인 자동 발행됩니다.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+col_t_btn1, col_t_btn2 = st.columns([2, 1])
+with col_t_btn1:
+    st.caption("아래 주황색 버튼을 누르면 사용자 화면에 티스토리 전용 브라우저 창이 열립니다:")
+with col_t_btn2:
+    if st.button("🔑 티스토리 브라우저 열기 (1회 로그인)", key="btn_tistory_session", type="secondary"):
+        import subprocess
+        subprocess.Popen([r".venv\Scripts\python.exe", "connect_tistory.py"])
+        st.success("🚀 티스토리 브라우저 창이 열렸습니다! 카카오 로그인을 1회 완료해 주세요.")
+
 # 계정 설정 아코디언
 with st.expander("⚙️ 블로그 로그인 계정 설정 (미입력 시 config.py 기본값 자동 사용)", expanded=False):
     col_acc1, col_acc2 = st.columns(2)

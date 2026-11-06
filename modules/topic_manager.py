@@ -162,3 +162,4 @@ def peek_current_topic() -> Dict[str, str]:
         "category": current_step["category"],
         "label": current_step["label"]
     }
+
