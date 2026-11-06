@@ -1,43 +1,23 @@
 """
-클라우드 무인 멀티 포스팅 러너 (GitHub Actions 크론용)
-- 아침 (08:30 KST): 재테크/경제 포스팅 (네이버 + 티스토리)
-- 점심 (12:30 KST): 생활/문화/리뷰 포스팅 (네이버 + 티스토리)
-- 저녁 (19:30 KST): 재테크 & 트렌드 포스팅 (네이버 + 티스토리)
-- 고화질 대표 썸네일 및 본문 이미지 자동 삽입 지원
+클라우드 & 로컬 무인 멀티 포스팅 러너 (7대 주제 엄격 순환 엔진)
+- 순서: 재테크 -> 생활문화 -> 정부지원금 -> 생활용품 -> 부동산 -> 건강 -> 인테리어
+- 원칙: 글 생성 즉시 포인터 전진! 발행 실패/중단 시 해당 글 즉시 폐기하고 무조건 다음 차례 새로운 주제로 발행
+- 고화질 대표 썸네일 및 본문 이미지 자동 삽입
 """
 import os
-import random
 from datetime import datetime, timezone, timedelta
 from config import Config
 from modules.logger import setup_logger
 from modules.generator import generate_blog_content
-from modules.publisher import publish_to_naver_email
+from modules.topic_manager import get_next_topic_and_advance
 from modules.naver_bot import publish_to_naver_via_bot
 from modules.tistory_bot import publish_to_tistory_via_bot
 
 logger = setup_logger("cloud_runner")
 
-FINANCE_KEYWORD_POOL = [
-    "2026년 하반기 정부지원금 혜택 및 신청 자격",
-    "2026년 청년 도약 계좌 조건 및 우대금리 비교",
-    "직장인을 위한 연말정산 절세 전략 핵심 꿀팁",
-    "2026년 소상공인 정책자금 신청 절차 및 필수 서류",
-    "사회초년생을 위한 목돈 만들기 통장 쪼개기 루틴",
-    "금리 인하기 똑똑한 예적금 갈아타기 전략"
-]
-
-LIFESTYLE_KEYWORD_POOL = [
-    "AI 기반 일상 업무 생산성 극대화 추천 도구 BEST 5",
-    "바쁜 현대인을 위한 시간 관리 노션(Notion) 템플릿 활용법",
-    "직장인 스트레스 완화와 건강한 수면 루틴 만들기",
-    "주말에 즐기기 좋은 힐링 문화 공간 및 전시 추천",
-    "스마트한 홈오피스 데스크 셋업 필수 아이템 솔직 리뷰",
-    "간편하고 건강한 1인 가구 밀프렙 식단 관리 꿀팁"
-]
-
 def run_automated_pipeline():
     logger.info("==================================================")
-    logger.info("=== [클라우드 무인 블로그 자동 발행 파이프라인 가동] ===")
+    logger.info("=== [무인 블로그 순환 자동 발행 파이프라인 가동] ===")
     logger.info("==================================================")
 
     # 한국 시간(KST = UTC + 9) 계산
@@ -45,30 +25,26 @@ def run_automated_pipeline():
     current_hour_kst = kst_now.hour
     logger.info(f"현재 한국 시간(KST): {kst_now.strftime('%Y-%m-%d %H:%M')} ({current_hour_kst}시)")
 
-    # 1. 시간대별 테마 자동 결정
-    if current_hour_kst < 11:
-        time_slot = "아침 (재테크·경제)"
-        target_category = "finance"
-        keyword = random.choice(FINANCE_KEYWORD_POOL)
-    elif 11 <= current_hour_kst < 17:
-        time_slot = "점심 (생활·문화·리뷰)"
-        target_category = "lifestyle"
-        keyword = random.choice(LIFESTYLE_KEYWORD_POOL)
-    else:
-        time_slot = "저녁 (재테크 & 라이프)"
-        target_category = "finance" if random.random() > 0.5 else "lifestyle"
-        keyword = random.choice(FINANCE_KEYWORD_POOL if target_category == "finance" else LIFESTYLE_KEYWORD_POOL)
+    # 1. 사용자가 지정한 7대 순환 큐에서 즉시 주제/키워드 추출 및 다음 차례로 전진!
+    topic_info = get_next_topic_and_advance()
+    topic_type = topic_info["topic_type"]
+    keyword = topic_info["keyword"]
+    target_category = topic_info["category"]
+    next_topic = topic_info["next_topic_type"]
 
-    logger.info(f"📢 [{time_slot}] 선정 키워드: '{keyword}' (분야: {target_category})")
+    logger.info(f"📢 [발행 차례] 분야: {topic_type} | 키워드: '{keyword}' (다음 차례: {next_topic})")
 
-    # 2. 고화질 이미지 2장이 포함된 글 생성
-    blog_data = generate_blog_content(keyword=keyword, category=target_category)
+    # 2. 고화질 이미지 2장이 포함된 글 생성 (실패 시에도 이전 글은 절대 재탕하지 않고 폐기됨)
+    blog_data = generate_blog_content(
+        keyword=keyword,
+        category=target_category,
+        topic_type=topic_type
+    )
     logger.info(f"콘텐츠 생성 완료 - 제목: {blog_data['title']}")
 
     # 3. 인증 정보 로드
     naver_id = os.getenv("NAVER_ID", Config.NAVER_ID)
     naver_pw = os.getenv("NAVER_PW", Config.NAVER_PW)
-    naver_blog_id = os.getenv("NAVER_BLOG_ID", Config.NAVER_BLOG_ID) or naver_id
 
     kakao_id = os.getenv("KAKAO_ID", "")
     kakao_pw = os.getenv("KAKAO_PW", "")
@@ -88,21 +64,12 @@ def run_automated_pipeline():
             print(f"🎉 [네이버 로봇 성공] {res_naver.get('message')}")
         else:
             print(f"⚠️ [네이버 로봇 실패 사유] {res_naver.get('message')}")
-            print("이메일 발송 백업 시도 중...")
-            res_email = publish_to_naver_email(
-                naver_id=naver_id,
-                naver_password=naver_pw,
-                title=blog_data["title"],
-                content_html=blog_data["content"],
-                blog_id=naver_blog_id
-            )
-            print(f"이메일 발송 결과: {res_email.get('message')}")
     else:
-        print("⚠️ [네이버 건너뜀] NAVER_ID 또는 NAVER_PW가 설정되지 않았습니다.")
+        print("⚠️ [네이버] 계정 정보(ID/PW)가 누락되어 발행을 건너뜁니다.")
 
-    # 5. [티스토리 블로그] 로봇 자동 발행 실행
+    # 5. [티스토리 블로그] 자동 발행 실행
     if kakao_id and kakao_pw:
-        print(f"🟠 [티스토리] 로봇 자동 발행 시작 (블로그: {t_name})")
+        print(f"🟠 [티스토리] 자동 발행 시작 (블로그: {t_name})")
         res_tistory = publish_to_tistory_via_bot(
             kakao_id=kakao_id,
             kakao_pw=kakao_pw,
@@ -116,9 +83,9 @@ def run_automated_pipeline():
         else:
             print(f"⚠️ [티스토리 로봇 실패 사유] {res_tistory.get('message')}")
     else:
-        print("⚠️ [티스토리 건너뜀] KAKAO_ID 또는 KAKAO_PW가 깃허브 보안 금고에 설정되지 않았습니다.")
+        print("⚠️ [티스토리] 카카오 로그인 정보(ID/PW)가 누락되어 발행을 건너뜁니다.")
 
-    logger.info("=== [클라우드 무인 포스팅 완료] ===")
+    logger.info(f"🏁 파이프라인 종료 (다음 예정 주제: {next_topic})")
 
 if __name__ == "__main__":
     run_automated_pipeline()
