@@ -76,7 +76,7 @@ def run_automated_pipeline():
 
     # 4. [네이버 블로그] 자동 발행 실행
     if naver_id and naver_pw:
-        logger.info(f"🟢 [네이버 블로그] 로봇 자동 발행 시도 ({naver_id})")
+        print(f"🟢 [네이버] 자동 발행 시작 (아이디: {naver_id})")
         res_naver = publish_to_naver_via_bot(
             naver_id=naver_id,
             naver_pw=naver_pw,
@@ -84,27 +84,25 @@ def run_automated_pipeline():
             content_html=blog_data["content"],
             tags=blog_data.get("tags")
         )
-        # 로봇이 캡차 등에 걸릴 경우 이메일 발행 폴백 시도
-        if not res_naver.get("success"):
-            logger.warning(f"로봇 직접 발행 실패 ({res_naver.get('message')}), 이메일 발행 백업 시도...")
-            res_naver = publish_to_naver_email(
+        if res_naver.get("success"):
+            print(f"🎉 [네이버 로봇 성공] {res_naver.get('message')}")
+        else:
+            print(f"⚠️ [네이버 로봇 실패 사유] {res_naver.get('message')}")
+            print("이메일 발송 백업 시도 중...")
+            res_email = publish_to_naver_email(
                 naver_id=naver_id,
                 naver_password=naver_pw,
                 title=blog_data["title"],
                 content_html=blog_data["content"],
                 blog_id=naver_blog_id
             )
-        
-        if res_naver.get("success"):
-            logger.info(f"🎉 [네이버] 최종 자동 발행 성공! -> {res_naver.get('post_url')}")
-        else:
-            logger.error(f"❌ [네이버] 발행 실패: {res_naver.get('message')}")
+            print(f"이메일 발송 결과: {res_email.get('message')}")
     else:
-        logger.info("네이버 인증 정보가 누락되어 네이버 발행을 건너뜁니다.")
+        print("⚠️ [네이버 건너뜀] NAVER_ID 또는 NAVER_PW가 설정되지 않았습니다.")
 
     # 5. [티스토리 블로그] 로봇 자동 발행 실행
     if kakao_id and kakao_pw:
-        logger.info(f"🟠 [티스토리 블로그] 로봇 자동 발행 시도 ({t_name})")
+        print(f"🟠 [티스토리] 로봇 자동 발행 시작 (블로그: {t_name})")
         res_tistory = publish_to_tistory_via_bot(
             kakao_id=kakao_id,
             kakao_pw=kakao_pw,
@@ -114,11 +112,11 @@ def run_automated_pipeline():
             tags=blog_data.get("tags")
         )
         if res_tistory.get("success"):
-            logger.info(f"🎉 [티스토리] 최종 자동 발행 성공! -> {res_tistory.get('post_url')}")
+            print(f"🎉 [티스토리 로봇 성공] {res_tistory.get('message')}")
         else:
-            logger.error(f"❌ [티스토리] 발행 실패: {res_tistory.get('message')}")
+            print(f"⚠️ [티스토리 로봇 실패 사유] {res_tistory.get('message')}")
     else:
-        logger.info("카카오 계정 정보(KAKAO_ID, KAKAO_PW)가 누락되어 티스토리 발행을 건너뜁니다.")
+        print("⚠️ [티스토리 건너뜀] KAKAO_ID 또는 KAKAO_PW가 깃허브 보안 금고에 설정되지 않았습니다.")
 
     logger.info("=== [클라우드 무인 포스팅 완료] ===")
 
