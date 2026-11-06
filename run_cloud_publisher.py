@@ -12,6 +12,7 @@ from modules.generator import generate_blog_content
 from modules.topic_manager import get_next_topic_and_advance
 from modules.naver_bot import publish_to_naver_via_bot
 from modules.tistory_bot import publish_to_tistory_via_bot
+from modules.persistent_bot import publish_naver_direct, publish_tistory_direct
 
 logger = setup_logger("cloud_runner")
 
@@ -51,8 +52,21 @@ def run_automated_pipeline():
     t_name = os.getenv("TISTORY_BLOG_NAME", Config.TISTORY_BLOG_NAME)
 
     # 4. [네이버 블로그] 자동 발행 실행
-    if naver_id and naver_pw:
-        print(f"🟢 [네이버] 자동 발행 시작 (아이디: {naver_id})")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    naver_profile = os.path.join(base_dir, "browser_profile", "naver")
+    tistory_profile = os.path.join(base_dir, "browser_profile", "tistory")
+
+    if os.path.exists(naver_profile) and any(os.scandir(naver_profile)):
+        print(f"🟢 [네이버] 저장된 영구 세션으로 로그인 건너뛰고 직격 발행 (아이디: {naver_id})")
+        res_naver = publish_naver_direct(
+            title=blog_data["title"],
+            content_html=blog_data["content"],
+            naver_id=naver_id,
+            naver_pw=naver_pw,
+            tags=blog_data.get("tags")
+        )
+    elif naver_id and naver_pw:
+        print(f"🟢 [네이버] 클라우드 봇 자동 발행 시작 (아이디: {naver_id})")
         res_naver = publish_to_naver_via_bot(
             naver_id=naver_id,
             naver_pw=naver_pw,
@@ -60,16 +74,27 @@ def run_automated_pipeline():
             content_html=blog_data["content"],
             tags=blog_data.get("tags")
         )
-        if res_naver.get("success"):
-            print(f"🎉 [네이버 로봇 성공] {res_naver.get('message')}")
-        else:
-            print(f"⚠️ [네이버 로봇 실패 사유] {res_naver.get('message')}")
     else:
-        print("⚠️ [네이버] 계정 정보(ID/PW)가 누락되어 발행을 건너뜁니다.")
+        res_naver = {"success": False, "message": "계정 정보 누락"}
+
+    if res_naver.get("success"):
+        print(f"🎉 [네이버 로봇 성공] {res_naver.get('message')}")
+    else:
+        print(f"⚠️ [네이버 로봇 알림] {res_naver.get('message')}")
 
     # 5. [티스토리 블로그] 자동 발행 실행
-    if kakao_id and kakao_pw:
-        print(f"🟠 [티스토리] 자동 발행 시작 (블로그: {t_name})")
+    if os.path.exists(tistory_profile) and any(os.scandir(tistory_profile)):
+        print(f"🟠 [티스토리] 저장된 영구 세션으로 로그인 건너뛰고 직격 발행 (블로그: {t_name})")
+        res_tistory = publish_tistory_direct(
+            title=blog_data["title"],
+            content_html=blog_data["content"],
+            blog_name=t_name,
+            kakao_id=kakao_id,
+            kakao_pw=kakao_pw,
+            tags=blog_data.get("tags")
+        )
+    elif kakao_id and kakao_pw:
+        print(f"🟠 [티스토리] 클라우드 봇 자동 발행 시작 (블로그: {t_name})")
         res_tistory = publish_to_tistory_via_bot(
             kakao_id=kakao_id,
             kakao_pw=kakao_pw,
@@ -78,12 +103,13 @@ def run_automated_pipeline():
             content_html=blog_data["content"],
             tags=blog_data.get("tags")
         )
-        if res_tistory.get("success"):
-            print(f"🎉 [티스토리 로봇 성공] {res_tistory.get('message')}")
-        else:
-            print(f"⚠️ [티스토리 로봇 실패 사유] {res_tistory.get('message')}")
     else:
-        print("⚠️ [티스토리] 카카오 로그인 정보(ID/PW)가 누락되어 발행을 건너뜁니다.")
+        res_tistory = {"success": False, "message": "카카오 계정 정보 누락"}
+
+    if res_tistory.get("success"):
+        print(f"🎉 [티스토리 로봇 성공] {res_tistory.get('message')}")
+    else:
+        print(f"⚠️ [티스토리 로봇 알림] {res_tistory.get('message')}")
 
     logger.info(f"🏁 파이프라인 종료 (다음 예정 주제: {next_topic})")
 
