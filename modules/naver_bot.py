@@ -59,8 +59,10 @@ def publish_to_naver_via_bot(
             }}""")
             page.wait_for_timeout(1000)
 
-            # 로그인 버튼 클릭
-            page.click("button.btn_login, #log\\.login")
+            # 로그인 버튼 클릭 (네이버 최신 UI: loginBtn_column, loginBtn_row 지원)
+            login_btn = page.locator("button#loginBtn_column, button#loginBtn_row, button:has-text('로그인'), button.btn_login, #log\\.login")
+            if login_btn.count() > 0:
+                login_btn.first.click()
             page.wait_for_timeout(3500)
 
             # 2. 스마트에디터 ONE 글쓰기 페이지 접속

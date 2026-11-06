@@ -53,10 +53,25 @@ def connect_tistory():
 
         # 2. 로그인 여부 판별
         if "login" in page.url.lower() or "accounts.kakao.com" in page.url:
-            print("\n👉 [카카오 로그인 화면 준비 완료]", flush=True)
-            print("   열린 브라우저 창에서 카카오 계정(아이디/비번)으로 로그인해 주세요.", flush=True)
-            print("   (스마트폰 카카오톡 인증이 뜨면 폰에서 '확인'을 눌러주시면 됩니다.)", flush=True)
-            print("   로그인이 완료되어 글쓰기 에디터가 열릴 때까지 기다리는 중입니다...", flush=True)
+            print("\n👉 [카카오 로그인 화면 감지] 아이디/비밀번호 자동 주입 시도...", flush=True)
+            try:
+                page.wait_for_timeout(1000)
+                id_el = page.locator("input#loginId--1, input[name='loginId'], input#id_email_2")
+                if id_el.count() > 0:
+                    id_el.first.fill("ssy139@kakao.com")
+                pw_el = page.locator("input#password--2, input[name='password'], input#id_password_3")
+                if pw_el.count() > 0:
+                    pw_el.first.fill("ehdgk1004!")
+                page.wait_for_timeout(500)
+                submit_btn = page.locator("button[type='submit'], .btn_g.highlight.submit, button:has-text('로그인')")
+                if submit_btn.count() > 0:
+                    submit_btn.first.click()
+                    print("✅ 아이디/비밀번호 자동 입력 및 로그인 버튼 클릭 완료!", flush=True)
+            except Exception as e:
+                print(f"⚠️ 자동 입력 참고: {e}", flush=True)
+
+            print("💡 브라우저 창에서 로그인이 완료되어 글쓰기 에디터가 열릴 때까지 대기합니다...", flush=True)
+            print("   (혹시 화면에 보안 퍼즐이 보이면 클릭해 주시면 즉시 통과됩니다.)", flush=True)
 
             try:
                 page.wait_for_url("**/manage/newpost/**", timeout=180000)

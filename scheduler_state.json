@@ -1,18 +1,18 @@
 {
-  "sequence_index": 2,
+  "sequence_index": 3,
   "keyword_indices": {
     "재테크": 1,
     "생활문화": 1,
-    "정부지원금": 0,
+    "정부지원금": 1,
     "생활용품": 0,
     "부동산": 0,
     "건강": 0,
     "인테리어": 0
   },
   "last_generated_topic": {
-    "type": "생활문화",
-    "keyword": "주말에 가볼 만한 서울 근교 힐링 전시 및 문화 공간",
-    "category": "lifestyle"
+    "type": "정부지원금",
+    "keyword": "2026년 하반기 숨은 정부지원금 보조금24 조회법",
+    "category": "finance"
   },
   "history": []
 }

@@ -52,12 +52,12 @@ def publish_naver_direct(
                 if naver_id and naver_pw:
                     try:
                         # JS 복사 붙여넣기 방식으로 봇 탐지 우회
-                        page.evaluate(f"""(id, pw) => {{
+                        page.evaluate(f"""(data) => {{
                             const idEl = document.querySelector('#id');
                             const pwEl = document.querySelector('#pw');
-                            if (idEl) idEl.value = id;
-                            if (pwEl) pwEl.value = pw;
-                        }}""", naver_id, naver_pw)
+                            if (idEl) idEl.value = data.id;
+                            if (pwEl) pwEl.value = data.pw;
+                        }}""", {"id": naver_id, "pw": naver_pw})
                         page.wait_for_timeout(500)
                         login_btn = page.locator("button.btn_login, #log\\.login, button:has-text('로그인')")
                         if login_btn.count() > 0:

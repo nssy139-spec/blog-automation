@@ -154,17 +154,28 @@ def publish_to_tistory_via_bot(
             logger.info("6단계: 완료 버튼 클릭 및 공개 발행 진행 중...")
             
             # 우측 상단 '완료' 버튼 클릭
-            complete_btn = page.locator("button#publish-layer-btn, button.btn.btn-default.btn-sm.btn-ready, button:has-text('완료')")
+            complete_btn = page.locator("button#publish-layer-btn, button.btn-ready, button:has-text('완료'), button.btn.btn-default.btn-sm.btn-ready")
             if complete_btn.count() > 0:
                 complete_btn.first.click()
-                page.wait_for_timeout(2000)
+            else:
+                page.evaluate("""() => {
+                    const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('완료'));
+                    if (btn) btn.click();
+                }""")
+            page.wait_for_timeout(2500)
 
-                # 공개 발행 라디오/버튼 선택 및 최종 '발행' 클릭
-                publish_btn = page.locator("button#publish-btn, button:has-text('발행'), button:has-text('공개발행')")
-                if publish_btn.count() > 0:
-                    publish_btn.first.click()
-                    page.wait_for_timeout(4000)
-                    logger.info("🎉 [티스토리 로봇] 발행 버튼 클릭 완료!")
+            # 공개 발행 라디오/버튼 선택 및 최종 '발행' 클릭
+            publish_btn = page.locator("button#publish-btn, button:has-text('발행'), button:has-text('공개발행'), button.btn-publish")
+            if publish_btn.count() > 0:
+                publish_btn.first.click()
+                logger.info("🎉 [티스토리 로봇] 발행 버튼 클릭 완료!")
+            else:
+                page.evaluate("""() => {
+                    const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('발행'));
+                    if (btn) btn.click();
+                }""")
+                logger.info("🎉 [티스토리 로봇] JS 발행 버튼 클릭 완료!")
+            page.wait_for_timeout(4000)
             
             if browser:
                 browser.close()
