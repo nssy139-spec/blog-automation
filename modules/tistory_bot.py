@@ -24,61 +24,80 @@ def publish_to_tistory_via_bot(
     if not kakao_id or not kakao_pw:
         return {"success": False, "message": "카카오 아이디 또는 비밀번호가 설정되지 않았습니다."}
 
+    import os
     from playwright.sync_api import sync_playwright
 
     logger.info(f"🤖 [티스토리 로봇 가동] 계정: {kakao_id} -> 블로그: {blog_name}")
 
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    profile_dir = os.path.join(base_dir, "browser_profile", "tistory")
+
     try:
         with sync_playwright() as p:
-            # 브라우저 실행 (헤드리스 모드)
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    "--no-sandbox",
-                    "--disable-setuid-sandbox",
-                    "--disable-dev-shm-usage",
-                    "--disable-blink-features=AutomationControlled"
-                ]
-            )
-            context = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-            )
-            page = context.new_page()
+            args = [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-blink-features=AutomationControlled"
+            ]
 
-            # 1. 티스토리 로그인 페이지 접속
-            logger.info("1단계: 카카오 로그인 페이지 접속 중...")
-            page.goto("https://www.tistory.com/auth/login", wait_until="domcontentloaded", timeout=45000)
-            page.wait_for_timeout(2000)
+            # 로컬 세션 프로필 디렉토리가 있으면 영구 세션으로 실행, 없으면 일반 브라우저로 실행
+            if os.path.exists(profile_dir):
+                logger.info(f"📁 기존 티스토리 영구 세션 프로필 로드: {profile_dir}")
+                context = p.chromium.launch_persistent_context(
+                    user_data_dir=profile_dir,
+                    headless=True,
+                    args=args,
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
+                page = context.pages[0] if context.pages else context.new_page()
+                browser = None
+            else:
+                browser = p.chromium.launch(headless=True, args=args)
+                context = browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
+                page = context.new_page()
 
-            # 카카오 로그인 버튼 클릭
-            kakao_btn = page.locator("a.btn_login.link_kakao_id, a.link_kakao, button.btn_login")
-            if kakao_btn.count() > 0:
-                kakao_btn.first.click()
-                page.wait_for_timeout(2000)
-
-            # 2. 카카오 계정 로그인 입력
-            logger.info("2단계: 카카오 아이디/비밀번호 입력 중...")
-            # 아이디 입력
-            id_input = page.locator("input#loginId--1, input[name='loginId'], input#id_email_2")
-            if id_input.count() > 0:
-                id_input.first.fill(kakao_id.strip())
-            
-            # 비밀번호 입력
-            pw_input = page.locator("input#password--2, input[name='password'], input#id_password_3")
-            if pw_input.count() > 0:
-                pw_input.first.fill(kakao_pw.strip())
-
-            # 로그인 버튼 클릭
-            submit_btn = page.locator("button.btn_g.highlight.submit, button[type='submit']")
-            if submit_btn.count() > 0:
-                submit_btn.first.click()
-                page.wait_for_timeout(4000)
-
-            logger.info("3단계: 로그인 완료 후 에디터 이동 중...")
-            # 3. 글쓰기 에디터 페이지 접속
+            # 1. 티스토리 글쓰기 에디터 직격 접속 시도
             write_url = f"https://{blog_name}.tistory.com/manage/newpost/"
+            logger.info(f"1단계: 티스토리 에디터 직격 접속 중... ({write_url})")
             page.goto(write_url, wait_until="domcontentloaded", timeout=45000)
             page.wait_for_timeout(3000)
+
+            # 로그인 여부 감지: 로그인이 풀려있거나 로그인 화면으로 리다이렉트된 경우에만 로그인 수행
+            if "login" in page.url.lower() or "accounts.kakao.com" in page.url or "auth/login" in page.url:
+                logger.info("2단계: 로그인 필요 감지 -> 카카오 계정 로그인 진행 중...")
+                
+                # 티스토리 로그인 페이지인 경우 카카오 버튼 클릭
+                if "tistory.com/auth/login" in page.url:
+                    kakao_btn = page.locator("a.btn_login.link_kakao_id, a.link_kakao, button.btn_login")
+                    if kakao_btn.count() > 0:
+                        kakao_btn.first.click()
+                        page.wait_for_timeout(2000)
+
+                # 아이디 입력
+                id_input = page.locator("input#loginId--1, input[name='loginId'], input#id_email_2")
+                if id_input.count() > 0:
+                    id_input.first.fill(kakao_id.strip())
+                
+                # 비밀번호 입력
+                pw_input = page.locator("input#password--2, input[name='password'], input#id_password_3")
+                if pw_input.count() > 0:
+                    pw_input.first.fill(kakao_pw.strip())
+
+                # 로그인 버튼 클릭
+                submit_btn = page.locator("button.btn_g.highlight.submit, button[type='submit']")
+                if submit_btn.count() > 0:
+                    submit_btn.first.click()
+                    page.wait_for_timeout(4000)
+
+                # 에디터로 재진입
+                if "manage/newpost" not in page.url:
+                    page.goto(write_url, wait_until="domcontentloaded", timeout=45000)
+                    page.wait_for_timeout(3000)
+            else:
+                logger.info("🎉 [세션 유지 감지] 이미 티스토리에 로그인되어 있습니다! 로그인 단계 건너뛰고 바로 글쓰기 진행")
 
             # 제목 입력
             logger.info(f"4단계: 제목 입력 중 -> {title}")
@@ -147,7 +166,10 @@ def publish_to_tistory_via_bot(
                     page.wait_for_timeout(4000)
                     logger.info("🎉 [티스토리 로봇] 발행 버튼 클릭 완료!")
             
-            browser.close()
+            if browser:
+                browser.close()
+            else:
+                context.close()
             
             return {
                 "success": True,
