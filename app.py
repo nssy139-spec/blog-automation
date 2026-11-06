@@ -128,8 +128,6 @@ if st.button("✨ 1. 고품질 블로그 글 & 고화질 이미지 즉시 생성
             st.session_state.img_meta = create_image_metadata(keyword=keyword, style_name=image_style)
             st.success(f"🎉 [{category_choice}] '{keyword}' 글이 고화질 사진 2장과 함께 완벽하게 생성되었습니다!")
 st.markdown('</div>', unsafe_allow_html=True)
-            st.success(f"🎉 '{keyword}' 주제로 글이 완벽하게 생성되었습니다! 아래에서 내용을 확인하고 바로 발행하세요.")
-st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
 # STEP 2 & 3: 생성 결과 및 실제 자동 발행 센터
