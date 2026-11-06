@@ -157,7 +157,8 @@ with mode_tab1:
                 title=blog_data["title"],
                 content_html=blog_data["content"],
                 naver_id=n_account_id if n_account_id else "ssy139",
-                naver_pw=n_account_pw
+                naver_pw=n_account_pw,
+                tags=blog_data.get("tags")
             )
             if res_n.get("success"):
                 status_box.write(f"🎉 **[네이버 블로그 발행 성공!]** 👉 [내 네이버 블로그 확인]({res_n.get('post_url')})")
@@ -175,7 +176,8 @@ with mode_tab1:
                 content_html=blog_data["content"],
                 blog_name=target_tistory,
                 kakao_id=kakao_user_id,
-                kakao_pw=kakao_user_pw
+                kakao_pw=kakao_user_pw,
+                tags=blog_data.get("tags")
             )
             if res_t.get("success"):
                 status_box.write(f"🎉 **[티스토리 발행 성공!]** 👉 [내 티스토리 확인]({res_t.get('post_url')})")
@@ -211,14 +213,14 @@ with mode_tab2:
 
                 n_account_id = n_id.strip() if n_id else Config.NAVER_ID
                 n_account_pw = n_pw.strip() if n_pw else Config.NAVER_PW
-                res_n = publish_naver_direct(title=blog_data["title"], content_html=blog_data["content"], naver_id=n_account_id, naver_pw=n_account_pw)
+                res_n = publish_naver_direct(title=blog_data["title"], content_html=blog_data["content"], naver_id=n_account_id, naver_pw=n_account_pw, tags=blog_data.get("tags"))
                 if res_n.get("success"):
                     status_box.write(f"🎉 **[네이버 블로그 발행 성공!]** 👉 [확인]({res_n.get('post_url')})")
 
                 kakao_user_id = k_id.strip() if k_id else Config.KAKAO_ID
                 kakao_user_pw = k_pw.strip() if k_pw else Config.KAKAO_PW
                 target_tistory = t_bname.strip() if t_bname else "essay0606"
-                res_t = publish_tistory_direct(title=blog_data["title"], content_html=blog_data["content"], blog_name=target_tistory, kakao_id=kakao_user_id, kakao_pw=kakao_user_pw)
+                res_t = publish_tistory_direct(title=blog_data["title"], content_html=blog_data["content"], blog_name=target_tistory, kakao_id=kakao_user_id, kakao_pw=kakao_user_pw, tags=blog_data.get("tags"))
                 if res_t.get("success"):
                     status_box.write(f"🎉 **[티스토리 발행 성공!]** 👉 [확인]({res_t.get('post_url')})")
 

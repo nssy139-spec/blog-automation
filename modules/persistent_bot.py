@@ -18,7 +18,8 @@ def publish_naver_direct(
     title: str,
     content_html: str,
     naver_id: str = "ssy139",
-    naver_pw: Optional[str] = None
+    naver_pw: Optional[str] = None,
+    tags: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     네이버 블로그 영구 세션 자동 발행 로봇
@@ -116,6 +117,18 @@ def publish_naver_direct(
             if publish_btn.count() > 0:
                 publish_btn.first.click()
                 page.wait_for_timeout(2000)
+
+                # 해시태그 20개 자동 입력
+                if tags:
+                    try:
+                        tag_input = page.locator("input[placeholder*='태그'], .tag_input, input.tag_input__uFpI1")
+                        if tag_input.count() > 0:
+                            for tag in tags[:20]:
+                                tag_input.first.fill(tag.strip())
+                                tag_input.first.press("Enter")
+                                page.wait_for_timeout(100)
+                    except Exception as e:
+                        logger.warning(f"네이버 태그 입력 참고: {e}")
                 
                 # 레이어 팝업의 최종 [발행] 확인 버튼 클릭
                 confirm_btn = page.locator("button.confirm_btn__DA9Nx, button[data-testid='editor-publish-btn'], button:has-text('발행')").last
@@ -143,7 +156,8 @@ def publish_tistory_direct(
     content_html: str,
     blog_name: str = "essay0606",
     kakao_id: Optional[str] = None,
-    kakao_pw: Optional[str] = None
+    kakao_pw: Optional[str] = None,
+    tags: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     티스토리 블로그 영구 세션 자동 발행 로봇
@@ -222,6 +236,19 @@ def publish_tistory_direct(
                 }}
             }}""", content_html)
             page.wait_for_timeout(2500)
+
+            # 4-1. 해시태그 20개 자동 입력
+            if tags:
+                logger.info(f"티스토리 해시태그 {len(tags[:20])}개 자동 입력 중...")
+                try:
+                    tag_input = page.locator("input#tag-inp, input.tag-input, input[placeholder*='태그']")
+                    if tag_input.count() > 0:
+                        for tag in tags[:20]:
+                            tag_input.first.fill(tag.strip())
+                            tag_input.first.press("Enter")
+                            page.wait_for_timeout(100)
+                except Exception as e:
+                    logger.warning(f"티스토리 태그 입력 참고: {e}")
 
             # 5. [완료] 및 [발행] 버튼 자동 클릭
             logger.info("티스토리 [완료/발행] 버튼 클릭...")

@@ -1,11 +1,95 @@
 """
-블로그 콘텐츠 생성 모듈 (리치유니 7대 전문 분야 엔진)
+블로그 콘텐츠 생성 모듈 (리치유니 7대 전문 분야 엔진 + SEO 해시태그 20선 자동 추출)
 - 재테크, 정부지원금, 부동산, 생활문화, 생활용품, 건강, 인테리어 7개 분야별 고유 특화 서식
 - 키워드에 따라 살아있는 전문 데이터, 3줄 요약, 고화질 Unsplash 이미지 2장, 꿀팁, FAQ 실시간 생성
+- 포스팅마다 정확히 20개의 고품질 검색 최적화(SEO) 해시태그 자동 생성 및 본문 하단 칩 스타일 삽입
 """
 from datetime import datetime
 from typing import Dict, Any, List
+import re
 from modules.image_service import get_blog_images
+
+def generate_20_hashtags(keyword: str, category_name: str, topic_type: str) -> List[str]:
+    """
+    키워드와 분야에 정확히 부합하는 고품질 검색 해시태그 20개를 생성합니다.
+    """
+    clean_kw = re.sub(r"[^\w\s]", "", keyword).strip()
+    words = [w for w in clean_kw.split() if len(w) >= 2]
+    main_word = words[0] if words else clean_kw
+    second_word = words[1] if len(words) > 1 else "추천"
+    current_year = datetime.now().year
+
+    # 주제별 맞춤 연관 키워드 사전
+    related_dict = {
+        "재테크": [
+            "재테크", "재테크꿀팁", "목돈만들기", "종잣돈", "통장쪼개기", "적금추천",
+            "고금리적금", "비과세적금", "사회초년생재테크", "월급관리", "직장인재테크",
+            "자산관리", "금융상품", "우대금리", "이자수익", "절세전략", "소득공제"
+        ],
+        "정부지원금": [
+            "정부지원금", "숨은정부지원금", "보조금24", "복지로", "청년지원금",
+            "소상공인지원금", "정책자금", "긴급생계비", "주거지원", "월세지원",
+            "에너지바우처", "복지혜택", "환급금신청", "정부지원혜택", "지원금조회", "생활비절감"
+        ],
+        "부동산": [
+            "부동산", "내집마련", "디딤돌대출", "버팀목대출", "아파트청약",
+            "청약가점", "특별공급", "전세보증보험", "전세사기예방", "확정일자",
+            "등기부등본", "주택담보대출", "월세세액공제", "공시지가", "부동산꿀팁", "부동산상식"
+        ],
+        "생활문화": [
+            "생활문화", "라이프스타일", "힐링", "주말나들이", "전시회추천",
+            "문화생활", "미라클모닝", "시간관리", "자기계발", "웰니스",
+            "스트레스해소", "마인드셋", "워라밸", "소확행", "감성라이프", "취미생활"
+        ],
+        "생활용품": [
+            "생활용품", "살림꿀템", "내돈내산리뷰", "다이소추천템", "주방용품",
+            "욕실용품", "정리정돈", "수납정리", "원룸인테리어", "1인가구살림",
+            "청소꿀팁", "살림노하우", "가성비살림템", "삶의질상승", "친환경세제", "미니멀라이프"
+        ],
+        "건강": [
+            "건강관리", "피로회복", "영양제추천", "직장인건강", "오피스스트레칭",
+            "바른자세", "거북목교정", "허리통증", "저당식단", "혈당관리",
+            "수면루틴", "불면증극복", "면역력강화", "유산소운동", "걷기운동", "건강루틴"
+        ],
+        "인테리어": [
+            "인테리어", "홈스타일링", "방꾸미기", "원룸인테리어", "화이트우드",
+            "간접조명", "조명인테리어", "데스크테리어", "플랜테리어", "반려식물",
+            "공간분리", "수납인테리어", "미니멀인테리어", "감성소품", "홈카페", "랜선집들이"
+        ]
+    }
+
+    pool = related_dict.get(topic_type, related_dict["재테크"])
+
+    # 태그 조립 (정확히 20개 도출)
+    tags = [
+        f"{main_word}",
+        f"{current_year}{main_word}",
+        f"{main_word}꿀팁",
+        f"{main_word}추천",
+        f"{main_word}총정리",
+        f"{category_name.replace('·', '').replace(' ', '')}",
+        f"{topic_type}"
+    ]
+
+    # 세부 연관 단어 추가
+    if len(words) > 1:
+        tags.append(f"{second_word}")
+        tags.append(f"{main_word}{second_word}")
+
+    # 풀에서 중복 없이 보충
+    for item in pool:
+        if item not in tags:
+            tags.append(item)
+        if len(tags) >= 19:
+            break
+
+    # 브랜딩 태그 마무리
+    if "리치유니" not in tags:
+        tags.append("리치유니")
+
+    # 정확히 20개로 슬라이싱
+    final_tags = tags[:20]
+    return final_tags
 
 def generate_specialized_sections(keyword: str, topic_type: str = "재테크") -> Dict[str, Any]:
     """
@@ -281,7 +365,7 @@ def generate_blog_content(
 ) -> Dict[str, Any]:
     """
     7개 전문 분야(재테크/정부지원금/부동산/생활문화/생활용품/건강/인테리어)에 맞춰 
-    풍부하고 고유한 글과 고화질 Unsplash 이미지 2장을 결합하여 생성합니다.
+    풍부하고 고유한 글, 고화질 이미지 2장, 그리고 정확히 20개의 검색 최적화 해시태그를 결합하여 생성합니다.
     """
     cleaned_keyword = keyword.strip() if keyword else "스마트 라이프 꿀팁"
     current_year = datetime.now().year
@@ -292,12 +376,16 @@ def generate_blog_content(
     # 1. 전문 분야별 동적 맞춤 콘텐츠 데이터 생성
     topic = generate_specialized_sections(cleaned_keyword, topic_type)
     
-    # 2. 고화질 Unsplash 이미지 2장 준비
+    # 2. 정확히 20개의 SEO 특화 해시태그 생성
+    tags_list = generate_20_hashtags(cleaned_keyword, category_name, topic_type)
+    hashtag_chips = " ".join([f"<span style='display:inline-block; background:#e0f2fe; color:#0369a1; padding:4px 10px; margin:3px 4px; border-radius:15px; font-size:13px; font-weight:600;'>#{t}</span>" for t in tags_list])
+    
+    # 3. 고화질 Unsplash 이미지 2장 준비
     images = get_blog_images(category=category_name, keyword=cleaned_keyword)
     thumb_url = images["thumbnail_url"]
     mid_img_url = images["content_img_url"]
 
-    # 3. 매력적인 제목 생성
+    # 4. 매력적인 제목 생성
     if is_finance:
         title = f"[{current_year} 최신가이드] {cleaned_keyword} 핵심 총정리 및 실전 체크포인트"
         theme_lead = f"2026년 급변하는 금융·경제 환경 속에서 똑똑한 자산 관리와 기회를 찾고 계시는 분들을 위해 <b><span style='color:#008080;'>{cleaned_keyword}</span></b>의 핵심 노하우를 명쾌하게 정리해 드립니다."
@@ -305,19 +393,19 @@ def generate_blog_content(
         title = f"[{current_year} 알짜리뷰] {cleaned_keyword} 직접 경험하고 정리한 솔직 꿀팁 및 활용법"
         theme_lead = f"바쁜 일상 속 삶의 질과 만족도를 확실하게 업그레이드해 줄 <b><span style='color:#008080;'>{cleaned_keyword}</span></b>의 핵심 활용법과 알짜 노하우를 솔직하게 공유합니다."
 
-    # 4. 요약 불릿 생성
+    # 5. 요약 불릿 생성
     summary_html = "".join([f"<li style='margin-bottom: 8px;'>{item}</li>" for item in topic["summary"]])
     
-    # 5. 본문 섹션 생성
+    # 6. 본문 섹션 생성
     sec1 = topic["sections"][0]
     sec2 = topic["sections"][1]
     sec3 = topic["sections"][2]
     
-    # 6. FAQ 생성
+    # 7. FAQ 생성
     faq1_q, faq1_a = topic["faqs"][0]
     faq2_q, faq2_a = topic["faqs"][1]
 
-    # 본문 전체 HTML (고화질 이미지 2장 + 리치유니 틸(#008080) 테마)
+    # 본문 전체 HTML (고화질 이미지 2장 + 20대 해시태그 칩 포함)
     body_html = f"""
 <div style="color: #222222; font-size: 16px; line-height: 1.85; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;">
 
@@ -389,7 +477,17 @@ def generate_blog_content(
         <p style="color: #444444; margin-top: 0; margin-bottom: 16px;">{faq2_a}</p>
     </div>
 
-    <!-- 9. 맺음말 및 브랜딩 푸터 -->
+    <!-- 9. 네이버/티스토리 검색 노출 최적화 해시태그 20선 -->
+    <div style="margin-top: 40px; padding: 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <p style="margin: 0 0 12px 0; font-weight: bold; color: #008080; font-size: 15px;">
+            🏷️ 연관 검색 추천 태그 (20선)
+        </p>
+        <div style="line-height: 2.2;">
+            {hashtag_chips}
+        </div>
+    </div>
+
+    <!-- 10. 맺음말 및 브랜딩 푸터 -->
     <hr style="border: 0; height: 1px; background-color: #e2e8f0; margin: 40px 0 25px 0;" />
     <p style="color: #555555; font-size: 15px;">
         오늘 전달해 드린 <b>{cleaned_keyword}</b> 정보가 여러분의 스마트한 일상과 풍요로운 자산 관리에 실질적인 도움이 되었기를 바랍니다.<br />
@@ -408,12 +506,10 @@ def generate_blog_content(
 </div>
 """
 
-    tags = [cleaned_keyword, category_name, topic_type, "리치유니", f"{cleaned_keyword}꿀팁", f"{cleaned_keyword}추천", "정보공유"]
-
     return {
         "title": title,
         "content": body_html,
-        "tags": tags,
+        "tags": tags_list,
         "category": category_name,
         "topic_type": topic_type,
         "keyword": cleaned_keyword

@@ -118,6 +118,19 @@ def publish_to_tistory_via_bot(
 
             page.wait_for_timeout(2000)
 
+            # 5-1. 해시태그 20개 자동 입력
+            if tags:
+                logger.info(f"5-1단계: 해시태그 {len(tags[:20])}개 자동 입력 중...")
+                try:
+                    tag_input = page.locator("input#tag-inp, input.tag-input, input[placeholder*='태그']")
+                    if tag_input.count() > 0:
+                        for tag in tags[:20]:
+                            tag_input.first.fill(tag.strip())
+                            tag_input.first.press("Enter")
+                            page.wait_for_timeout(150)
+                except Exception as e:
+                    logger.warning(f"태그 입력 참고: {e}")
+
             # 6. 완료 및 발행 버튼 클릭
             logger.info("6단계: 완료 버튼 클릭 및 공개 발행 진행 중...")
             

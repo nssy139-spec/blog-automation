@@ -121,6 +121,18 @@ def publish_to_naver_via_bot(
                 publish_btn.first.click()
                 page.wait_for_timeout(2000)
 
+                # 해시태그 20개 자동 입력
+                if tags:
+                    try:
+                        tag_input = page.locator("input[placeholder*='태그'], .tag_input, input.tag_input__uFpI1")
+                        if tag_input.count() > 0:
+                            for tag in tags[:20]:
+                                tag_input.first.fill(tag.strip())
+                                tag_input.first.press("Enter")
+                                page.wait_for_timeout(100)
+                    except Exception as e:
+                        logger.warning(f"네이버 태그 입력 참고: {e}")
+
                 # 최종 발행 확인 버튼 클릭
                 confirm_btn = page.locator("button.confirm_btn__DA9Nx, button:has-text('발행')").last
                 if confirm_btn.count() > 0:
